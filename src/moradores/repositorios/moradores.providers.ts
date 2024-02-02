@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import { Moradores } from "./entities/moradore.entity";
+import { Moradores } from "../entities/moradores.entity";
 
 export const moradoresProviders = [
     {
