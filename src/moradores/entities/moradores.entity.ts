@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { Moradias } from './moradias.entity';
+import { Moradias } from './moradias.moradores.entity';
 
 
 @Entity()

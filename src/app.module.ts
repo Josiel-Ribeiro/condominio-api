@@ -4,6 +4,10 @@ import { AppService } from './app.service';
 import { MoradoresModule } from './moradores/moradores.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { MoradiasModule } from './moradias/moradias.module';
+
+
+
 
 @Module({
   imports: [MoradoresModule,
@@ -11,8 +15,16 @@ import { join } from 'path';
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'upload'),
     }),
+  
+    MoradiasModule,
+  
+
+  
+ 
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService
+  
+  ],
 })
 export class AppModule {}

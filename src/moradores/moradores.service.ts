@@ -3,7 +3,8 @@ import { Repository } from 'typeorm';
 import { CreateMoradoreDto } from './dto/create-moradore.dto';
 import { UpdateMoradoreDto } from './dto/update-moradore.dto';
 import { Moradores } from './entities/moradores.entity';
-import { Moradias } from './entities/moradias.entity';
+import { Moradias } from './entities/moradias.moradores.entity';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class MoradoresService {
@@ -21,9 +22,7 @@ export class MoradoresService {
       duplicidade: 'Ja existe um registro com essas informações',
     };
     try {
-      if(createMoradoreDto.moradia !==1){
-
-
+      if (createMoradoreDto.moradia !== 1) {
         const validar = await this.moradoresRepository.findOne({
           where: {
             nome: createMoradoreDto.nome,
@@ -32,7 +31,8 @@ export class MoradoresService {
         });
         if (!validar) {
           createMoradoreDto.moradia = Number(createMoradoreDto.moradia);
-          const newRegister = this.moradoresRepository.create(createMoradoreDto);
+          const newRegister =
+            this.moradoresRepository.create(createMoradoreDto);
           if (newRegister) {
             await this.moradoresRepository.save(newRegister);
             return { mensagem: message.sucess };
@@ -42,8 +42,8 @@ export class MoradoresService {
         } else {
           return { mensagem: message.duplicidade };
         }
-      }else{
-        return {message: "O id da moradia em questão e referente a portaria"}
+      } else {
+        return { message: 'O id da moradia em questão e referente a portaria' };
       }
     } catch (error) {
       return { mensagem: message.erro, erro: error };
@@ -93,14 +93,13 @@ export class MoradoresService {
     WHERE TM.moradorID != 1
     GROUP BY tm.moradorID
     
-`
-;
+`;
     const results = await this.moradoresRepository.query(query);
     return results;
   }
 
   findOne(id: number) {
-    if(id !== 1){
+    if (id !== 1) {
       const query = `
    
       SELECT
@@ -139,39 +138,61 @@ export class MoradoresService {
       ON TM.idresponsavel = TR.idR
       WHERE TM.moradorID = ${id}
       GROUP BY tm.moradorID
-      `
-      ;
-      
-      const results = this.moradoresRepository.query(query)
-      
-      if(results){
-        return results
-      }else{
-        return{response:"Nemm um registro encontrado"}
+      `;
+      const results = this.moradoresRepository.query(query);
+
+      if (results) {
+        return results;
+      } else {
+        return { response: 'Nemm um registro encontrado' };
       }
-    }else{
-      return{response:"Nemm um registro encontrado"}
+    } else {
+      return { response: 'Nemm um registro encontrado' };
     }
+  }
 
+  async update(id: number, updateMoradoreDto: UpdateMoradoreDto) {
+    try {
 
-}
+      const morador = await this.moradoresRepository.findOne({where:{idmoradores:id}})
 
-  update(id: number, updateMoradoreDto: UpdateMoradoreDto) {
-    return `This action updates a #${id} moradore`;
+      const fotoAntiga = morador.foto;
+
+        await this.moradoresRepository.update(id, {
+          nome: updateMoradoreDto.nome,
+          email: updateMoradoreDto.email,
+          telefone: updateMoradoreDto.telefone,
+          moradia: updateMoradoreDto.moradia,
+          foto: updateMoradoreDto.foto,
+        })
+
+        const atualizado = await this.moradoresRepository.findOne({where:{idmoradores:id}})
+
+      if(atualizado){
+        await unlink(`./upload/${fotoAntiga}`)
+         return atualizado
+         
+      }
+
+   
+
+      
+
+  
+    } catch (error) {
+      return error;
+    }
   }
 
   async remove(id: number) {
-   
-
-  const validar = await this.moradiasRepository.findOne({where:{id_responsavel:id}})
-  if(validar){
- this.moradiasRepository.update(validar.idmoradias,{id_responsavel:1})
- this.moradoresRepository.delete(id)
-  }else{
-   this.moradoresRepository.delete(id)
+    const validar = await this.moradiasRepository.findOne({
+      where: { id_responsavel: id },
+    });
+    if (validar) {
+      this.moradiasRepository.update(validar.idmoradias, { id_responsavel: 1 });
+      this.moradoresRepository.delete(id);
+    } else {
+      this.moradoresRepository.delete(id);
+    }
   }
-  
- }
-    
-    
 }

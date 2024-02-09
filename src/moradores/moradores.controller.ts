@@ -46,7 +46,19 @@ async create(@Body() body:CreateMoradoreDto, @UploadedFile() file:Express.Multer
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMoradoreDto: UpdateMoradoreDto) {
+  @UseInterceptors(FileInterceptor('file',{
+    storage:diskStorage({
+      destination:'./upload',
+      filename(req, file, callback) {
+        const randomName = Date.now();
+      const fileName = `${randomName}${file.originalname}`;
+      return callback(null, fileName);
+      },
+    })
+  }))
+  update(@Param('id') id: string, @Body() updateMoradoreDto: UpdateMoradoreDto, @UploadedFile() file:Express.Multer.File) {
+
+    updateMoradoreDto.foto = file.filename
     return this.moradoresService.update(+id, updateMoradoreDto);
   }
 
