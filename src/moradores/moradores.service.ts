@@ -4,7 +4,7 @@ import { CreateMoradoreDto } from './dto/create-moradore.dto';
 import { UpdateMoradoreDto } from './dto/update-moradore.dto';
 import { Moradores } from './entities/moradores.entity';
 import { Moradias } from './entities/moradias.moradores.entity';
-import { unlink } from 'fs/promises';
+import { access, constants, unlink } from 'fs/promises';
 
 @Injectable()
 export class MoradoresService {
@@ -55,144 +55,147 @@ export class MoradoresService {
    
 
 
-    SELECT
-    TM.moradorID,
-    TM.morador,
-    TM.email,
-    TM.telefone,
-    TM.foto,
-    TM.numero,
-    TM.andar,
-    TR.nomeR
-    
-    FROM (
-    
-       SELECT 
-        moradores.idmoradores AS moradorID,
-        moradores.nome  AS morador,
-        moradores.email AS email,
-        moradores.telefone AS telefone,
-        moradores.foto AS foto,
-        moradias.numero AS numero,
-        moradias.andar AS andar,
-        moradias.id_responsavel AS idresponsavel
-        FROM moradores INNER JOIN  moradias ON moradores.moradia = moradias.idmoradias
-    
-    ) TM INNER JOIN (
-    
-    SELECT
-    moradores.idmoradores AS idR,
-    moradores.nome AS nomeR
-    FROM moradores inner join moradias
-    ON moradias.id_responsavel = moradores.idmoradores
-    
-    
-    ) TR 
-    
-    ON TM.idresponsavel = TR.idR 
-    WHERE TM.moradorID != 1
-    GROUP BY tm.moradorID
+    select
+    moradores.idmoradores as id,
+    moradores.nome as nome,
+    moradores.telefone as tell,
+    moradores.email as email,
+    moradores.foto as foto,
+    moradias.numero as numero,
+    moradias.andar as andar
+  from
+    moradores
+    inner join moradias on moradores.moradia = moradias.idmoradias
+    and moradores.idmoradores != 1
     
 `;
     const results = await this.moradoresRepository.query(query);
-    return results;
+
+    return results.map((item) => ({
+      ...item,
+      foto: `http://localhost:4000/${item.foto}`,
+    }));
   }
 
-  findOne(id: number) {
-    if (id !== 1) {
-      const query = `
+  async findOne(id: number) {
+    const query = `
    
-      SELECT
-      TM.moradorID,
-      TM.morador,
-      TM.email,
-      TM.telefone,
-      TM.foto,
-      TM.numero,
-      TR.nomeR
-      
-      FROM (
-      
-         SELECT 
-          moradores.idmoradores AS moradorID,
-          moradores.nome  AS morador,
-          moradores.email AS email,
-          moradores.telefone AS telefone,
-          moradores.foto AS foto,
-          moradias.numero AS numero,
-          moradias.andar AS andar,
-          moradias.id_responsavel AS idresponsavel
-          FROM moradores INNER JOIN  moradias ON moradores.moradia = moradias.idmoradias
-      
-      ) TM INNER JOIN (
-      
-      SELECT
-      moradores.idmoradores AS idR,
-      moradores.nome AS nomeR
-      FROM moradores inner join moradias
-      ON moradias.id_responsavel = moradores.idmoradores
-      
-      
-      ) TR 
-      
-      ON TM.idresponsavel = TR.idR
-      WHERE TM.moradorID = ${id}
-      GROUP BY tm.moradorID
+      select
+      moradores.idmoradores as id,
+      moradores.nome as nome,
+      moradores.telefone as tell,
+      moradores.email as email,
+      moradores.foto as foto,
+      moradias.numero as numero,
+      moradias.andar as andar
+    from
+      moradores
+      inner join moradias on moradores.moradia = moradias.idmoradias
+      and moradores.idmoradores != 1
+      where moradores.idmoradores = ${id}
       `;
-      const results = this.moradoresRepository.query(query);
+    const results = await this.moradoresRepository.query(query);
 
-      if (results) {
-        return results;
-      } else {
-        return { response: 'Nemm um registro encontrado' };
-      }
+    if (results.length > 0) {
+      results[0].foto = `http://localhost:4000/${results[0].foto}`;
+      return results[0];
     } else {
       return { response: 'Nemm um registro encontrado' };
     }
   }
 
   async update(id: number, updateMoradoreDto: UpdateMoradoreDto) {
-    try {
 
-      const morador = await this.moradoresRepository.findOne({where:{idmoradores:id}})
+    if(id === 1){
+      {
+        await unlink(`./upload/${updateMoradoreDto.foto}`);
+        return { mensage: 'Esse ID não pode ser atualizado' };
+      }
+    }
+    if (id !== 1) {
+      const validar = await this.moradoresRepository.findOne({
+        where: { idmoradores: id },
+      });
 
-      const fotoAntiga = morador.foto;
-
+      if (validar) {
+        const fotoAntiga = validar.foto;
         await this.moradoresRepository.update(id, {
           nome: updateMoradoreDto.nome,
-          email: updateMoradoreDto.email,
           telefone: updateMoradoreDto.telefone,
+          email: updateMoradoreDto.email,
           moradia: updateMoradoreDto.moradia,
           foto: updateMoradoreDto.foto,
-        })
+        });
 
-        const atualizado = await this.moradoresRepository.findOne({where:{idmoradores:id}})
+        try {
+          await access(`./upload/${fotoAntiga}`, constants.F_OK);
+          // Se o arquivo existe, então pode excluí-lo
+          await unlink(`./upload/${fotoAntiga}`);
+        } catch (error) {
+          // Se ocorrer um erro, significa que o arquivo não existe
+          console.error(
+            `O arquivo ${fotoAntiga} não existe ou não é acessível.`,
+          );
+        }
 
-      if(atualizado){
-        await unlink(`./upload/${fotoAntiga}`)
-         return atualizado
-         
+        const query = `
+     
+       select
+       moradores.idmoradores as id,
+       moradores.nome as nome,
+       moradores.telefone as tell,
+       moradores.email as email,
+       moradores.foto as foto,
+       moradias.numero as numero,
+       moradias.andar as andar
+     from
+       moradores
+       inner join moradias on moradores.moradia = moradias.idmoradias
+       and moradores.idmoradores != 1
+       where moradores.idmoradores = ${id}
+       `;
+        const results = await this.moradoresRepository.query(query);
+        results[0].foto = `http://localhost:4000/${results[0].foto}`;
+        return results;
+      }else{
+        await unlink(`./upload/${updateMoradoreDto.foto}`);
+        return {response: "id não localizado"}
       }
-
-   
-
-      
-
-  
-    } catch (error) {
-      return error;
-    }
+    }  
   }
 
   async remove(id: number) {
-    const validar = await this.moradiasRepository.findOne({
-      where: { id_responsavel: id },
+    const morador = await this.moradoresRepository.findOne({
+        where: { idmoradores: id },
     });
-    if (validar) {
-      this.moradiasRepository.update(validar.idmoradias, { id_responsavel: 1 });
-      this.moradoresRepository.delete(id);
-    } else {
-      this.moradoresRepository.delete(id);
+    
+    if (!morador) {
+        return { mensagem: 'ID não localizado' };
     }
-  }
+
+    const fotoAntiga = morador.foto;
+
+    const verificarSeEResponsavel = await this.moradiasRepository.findOne({
+        where: { id_responsavel: id },
+    });
+
+    if (verificarSeEResponsavel) {
+        await this.moradiasRepository.update(
+            verificarSeEResponsavel.idmoradias,
+            { id_responsavel: 1 },
+        );
+    }
+
+    await this.moradoresRepository.delete(id);
+
+    if (fotoAntiga) {
+        await access(`./upload/${fotoAntiga}`, constants.F_OK);
+        // Se o arquivo existe, então pode excluí-lo
+        await unlink(`./upload/${fotoAntiga}`);
+    }
+
+    return { mensagem: 'Registro deletado com sucesso' };
 }
+
+}
+

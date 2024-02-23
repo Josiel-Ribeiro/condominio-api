@@ -23,7 +23,7 @@ export class MoradoresController {
   }))
 async create(@Body() body:CreateMoradoreDto, @UploadedFile() file:Express.Multer.File) {
  if(body){
-  body.foto = `http://localhost:4000/${file.filename}`
+  body.foto = file.filename
  const resposta = await this.moradoresService.create(body)
  if(resposta.erro || resposta.mensagem === "Ja existe um registro com essas informações"){
  await unlink(`./upload/${file.filename}`)
@@ -56,14 +56,20 @@ async create(@Body() body:CreateMoradoreDto, @UploadedFile() file:Express.Multer
       },
     })
   }))
-  update(@Param('id') id: string, @Body() updateMoradoreDto: UpdateMoradoreDto, @UploadedFile() file:Express.Multer.File) {
+  async update(@Param('id') id: string, @Body() updateMoradoreDto: UpdateMoradoreDto, @UploadedFile() file:Express.Multer.File) {
+
 
     updateMoradoreDto.foto = file.filename
-    return this.moradoresService.update(+id, updateMoradoreDto);
+    return this.moradoresService.update(+id, updateMoradoreDto)
+   
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
+   if(+id !== 1){
     return this.moradoresService.remove(+id);
+   }else{
+    return {mensage: "Não e possivel deletar esse registro"}
+   }
   }
 }
