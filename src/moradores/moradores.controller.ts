@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, Req, UseGuards } from '@nestjs/common';
 import { MoradoresService } from './moradores.service';
 import { CreateMoradoreDto } from './dto/create-moradore.dto';
 import { UpdateMoradoreDto } from './dto/update-moradore.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { unlink } from 'fs/promises';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('moradores')
+@UseGuards(AuthGuard('jwt'))
 export class MoradoresController {
   constructor(private readonly moradoresService: MoradoresService) {}
 

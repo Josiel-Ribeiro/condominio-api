@@ -10,9 +10,10 @@ export class MoradiasController {
   @Post()
  async create(@Body() createMoradiaDto: CreateMoradiaDto) {
 
-    const resposta =  await this.moradiasService.create(createMoradiaDto);
   
-    return resposta
+  return await this.moradiasService.create(createMoradiaDto);
+  
+  
   }
 
   @Get()

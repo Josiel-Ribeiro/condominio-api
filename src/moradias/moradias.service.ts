@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateMoradiaDto } from './dto/create-moradia.dto';
 import { UpdateMoradiaDto } from './dto/update-moradia.dto';
-import { Repository } from 'typeorm';
+import { Repository, ReturnDocument } from 'typeorm';
 import { Moradores } from 'src/moradores/entities/moradores.entity';
 import { Moradias } from 'src/moradores/entities/moradias.moradores.entity';
 
@@ -16,19 +16,28 @@ export class MoradiasService {
   ) {}
 
 
- async create(createMoradiaDto: CreateMoradiaDto) {
- 
+  async create(createMoradiaDto: CreateMoradiaDto) {
+    const validarResponsavel = await this.moradoresRepository.findOne({ where: { idmoradores: Number(createMoradiaDto.id_responsavel) } });
 
 
-  }
+   
+    if (!validarResponsavel) {
+        return { mensagem: "ID responsável não localizado" };
+    } else {
+        const novaMoradia = this.moradiasRepository.create(createMoradiaDto);
+        return await this.moradiasRepository.save(novaMoradia);
+    }
+}
+
 
  async findAll() {
 
     const query = `
     SELECT
+    moradias.idmoradias,
     moradias.numero,
     moradias.andar,
-    moradores.nome
+    moradores.nome as Responsavel
     FROM moradores INNER JOIN moradias
     ON moradias.id_responsavel = moradores.idmoradores
     
@@ -55,8 +64,17 @@ export class MoradiasService {
      
   }
 
-  update(id: number, updateMoradiaDto: UpdateMoradiaDto) {
-    return `This action updates a #${id} moradia`;
+  async update(id: number, updateMoradiaDto: UpdateMoradiaDto) {
+
+const validar = await this.moradiasRepository.findOne({where:{idmoradias:id}})
+if(validar){
+  await this.moradiasRepository.update(id,{
+    numero:updateMoradiaDto.numero,
+    andar:updateMoradiaDto.andar,
+    id_responsavel:updateMoradiaDto.id_responsavel  })
+}
+
+
   }
 
   remove(id: number) {
