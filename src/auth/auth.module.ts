@@ -13,7 +13,7 @@ import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
-    imports: [PassportModule,UsuariosModule,ConfigModule.forRoot(),JwtModule.register({privateKey:process.env.JWT_SECRET,signOptions:{expiresIn:'1m'}})],
+    imports: [PassportModule,UsuariosModule,ConfigModule.forRoot(),JwtModule.register({privateKey:process.env.JWT_SECRET,signOptions:{expiresIn:'1h'}})],
     controllers: [
         AuthController,],
     providers: [

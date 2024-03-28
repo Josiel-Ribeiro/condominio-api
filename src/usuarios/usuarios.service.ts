@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
-
+import * as bcrypt from 'bcrypt'
 import { Repository } from 'typeorm';
 import { Usuarios } from './entities/usuario.entity';
 
@@ -20,6 +20,7 @@ export class UsuariosService {
     if (!validar) {
   
       const newUser = this.userRepository.create(createUsuarioDto)
+      newUser.userPass = await bcrypt.hash(newUser.userPass,10)
       await this.userRepository.save(newUser)
 
       const verificar = await this.userRepository.findOne({ where: { id: newUser.id } })
